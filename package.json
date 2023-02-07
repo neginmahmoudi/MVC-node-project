@@ -19,6 +19,7 @@
   },
   "homepage": "https://github.com/neginmahmoudi/MVC-node-project#readme",
   "dependencies": {
+    "bcrypt": "^5.1.0",
     "cores": "^0.8.5",
     "cors": "^2.8.5",
     "date-fns": "^2.29.3",

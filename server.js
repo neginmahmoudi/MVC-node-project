@@ -6,15 +6,22 @@ const cors = require('cors');
 const corsOptions = require('./config/corsOptions');
 const { logger } = require('./middleware/logEvents');
 const errorHandler = require('./middleware/errorHandler');
+const verifyJWT = require('./middleware/verifyJWT');
+const cookieParser = require('cookie-parser');
+const credentials = require('./middleware/credentials');
 const mongoose = require('mongoose');
 const connectDB = require('./config/dbConn');
 const PORT = process.env.PORT || 3500;
 
-//connect to MongoDB
+// Connect to MongoDB
 connectDB();
 
 // custom middleware logger
 app.use(logger);
+
+// Handle options credentials check - before CORS!
+// and fetch cookies credentials requirement
+app.use(credentials);
 
 // Cross Origin Resource Sharing
 app.use(cors(corsOptions));
@@ -24,35 +31,23 @@ app.use(express.urlencoded({ extended: false }));
 
 // built-in middleware for json
 app.use(express.json());
+
+//middleware for cookies
+app.use(cookieParser());
+
 //serve static files
 app.use('/', express.static(path.join(__dirname, '/public')));
 
 // routes
 app.use('/', require('./routes/root'));
+app.use('/register', require('./routes/register'));
+app.use('/auth', require('./routes/auth'));
+app.use('/refresh', require('./routes/refresh'));
+app.use('/logout', require('./routes/logout'));
+
+app.use(verifyJWT);
 app.use('/employees', require('./routes/api/employees'));
-
-// app.get('^/$|/index(.html)?', (req, res) => {
-//   // res.sendFile('./views/index.html', { root: __dirname });
-//   res.sendFile(path.join(__dirname, 'views', 'index.html'));
-// });
-// app.get('/new-page(.html)?', (req, res) => {
-//   res.sendFile(path.join(__dirname, 'views', 'new-page.html'));
-// });
-
-// app.get('/old-page(.html)?', (req, res) => {
-//   res.redirect(301, 'index.html'); //302 by default
-// });
-// // Route handlers
-// app.get(
-//   '/hello(.html)?',
-//   (req, res, next) => {
-//     console.log('attempted to run the file');
-//     next();
-//   },
-//   (req, res) => {
-//     res.send('hello world!');
-//   },
-// );
+app.use('/users', require('./routes/api/users'));
 
 app.all('*', (req, res) => {
   res.status(404);
@@ -68,6 +63,6 @@ app.all('*', (req, res) => {
 app.use(errorHandler);
 
 mongoose.connection.once('open', () => {
-  console.log('connected to MongoDB');
+  console.log('Connected to MongoDB');
   app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
 });
